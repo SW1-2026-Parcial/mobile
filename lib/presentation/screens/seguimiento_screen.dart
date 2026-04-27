@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/seguimiento_provider.dart';
+import '../providers/tramite_tracker_provider.dart';
+import '../widgets/app_shell.dart';
 import '../widgets/tramite_status_badge.dart';
 import '../widgets/tramite_timeline.dart';
 
@@ -13,22 +15,18 @@ class SeguimientoScreen extends StatefulWidget {
 
 class _SeguimientoScreenState extends State<SeguimientoScreen> {
   final TextEditingController _ticketController = TextEditingController();
-  bool _initFromNotification = false;
+  bool _initFromArgs = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initFromNotification) {
-      // ── PUSH NOTIFICATION ── si la pantalla se abrió desde una notificación push,
-      // el ticketNumber viene como argument de la ruta
-      final ticketFromNotif =
-          ModalRoute.of(context)?.settings.arguments as String?;
-      if (ticketFromNotif != null && ticketFromNotif.isNotEmpty) {
-        _initFromNotification = true;
-        _ticketController.text = ticketFromNotif;
-        // Buscar automáticamente al abrir desde notificación
+    if (!_initFromArgs) {
+      final ticketArg = ModalRoute.of(context)?.settings.arguments as String?;
+      if (ticketArg != null && ticketArg.isNotEmpty) {
+        _initFromArgs = true;
+        _ticketController.text = ticketArg;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _buscar(ticketFromNotif);
+          _buscar(ticketArg);
         });
       }
     }
@@ -37,18 +35,44 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
   @override
   void dispose() {
     _ticketController.dispose();
-    // El provider se encarga de desconectar el WebSocket en su propio dispose
     super.dispose();
   }
-
 
   void _buscar(String ticket) {
     final trimmed = ticket.trim();
     if (trimmed.isEmpty) return;
-    context.read<SeguimientoProvider>().buscarTramite(trimmed);
+    context.read<SeguimientoProvider>().buscarTramite(trimmed).then((_) {
+      _intentarAgregarAlTracker(trimmed);
+    });
   }
 
-  /// Construye el campo de búsqueda de ticket.
+  void _intentarAgregarAlTracker(String ticketNumber) {
+    final provider = context.read<SeguimientoProvider>();
+    if (provider.tramite == null) return;
+
+    final tracker = context.read<TramiteTrackerProvider>();
+    if (tracker.contiene(ticketNumber)) return;
+
+    if (tracker.estaLleno) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Límite de 3 trámites alcanzado. Deja de seguir uno para agregar este.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    tracker.agregar(provider.tramite!);
+  }
+
+  void _dejarDeSeguir(String ticketNumber) {
+    context.read<TramiteTrackerProvider>().remover(ticketNumber);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Dejaste de seguir este trámite')),
+    );
+  }
+
   Widget _buildBuscador() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -82,7 +106,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
     );
   }
 
-  /// Construye el contenido según el estado del [SeguimientoProvider].
   Widget _buildContent(SeguimientoProvider provider) {
     switch (provider.estado) {
       case SeguimientoEstado.inicial:
@@ -128,7 +151,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Tarjeta de estado del trámite
               Card(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -176,10 +198,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              // ── PUSH NOTIFICATION ── Los eventos aquí son los mismos que
-              // disparan las push notifications desde el backend.
-              // El WebSocket los recibe en tiempo real; las push llegan
-              // cuando la app está en background.
               TramiteTimeline(eventos: provider.eventos),
               if (provider.eventos.isEmpty &&
                   provider.estado == SeguimientoEstado.activo)
@@ -201,23 +219,31 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seguimiento de Trámite'),
-        backgroundColor: const Color(0xFF3F51B5),
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          _buildBuscador(),
-          const Divider(height: 1),
-          Expanded(
-            child: Consumer<SeguimientoProvider>(
-              builder: (context, provider, _) => _buildContent(provider),
-            ),
+    return Consumer2<SeguimientoProvider, TramiteTrackerProvider>(
+      builder: (context, seguimiento, tracker, _) {
+        final ticketActual = seguimiento.tramite?.ticketNumber;
+        final estaTrackeando = ticketActual != null && tracker.contiene(ticketActual);
+
+        return AppShell(
+          title: 'Seguimiento de Trámite',
+          actions: estaTrackeando
+              ? [
+                  IconButton(
+                    icon: const Icon(Icons.bookmark_remove),
+                    tooltip: 'Dejar de seguir',
+                    onPressed: () => _dejarDeSeguir(ticketActual),
+                  ),
+                ]
+              : null,
+          body: Column(
+            children: [
+              _buildBuscador(),
+              const Divider(height: 1),
+              Expanded(child: _buildContent(seguimiento)),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

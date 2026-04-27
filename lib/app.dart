@@ -3,13 +3,10 @@ import 'package:provider/provider.dart';
 import 'core/services/local_notification_service.dart';
 import 'presentation/providers/politica_catalog_provider.dart';
 import 'presentation/providers/seguimiento_provider.dart';
+import 'presentation/providers/tramite_tracker_provider.dart';
 import 'presentation/screens/politicas_screen.dart';
 import 'presentation/screens/seguimiento_screen.dart';
 
-/// Widget raíz de la aplicación.
-///
-/// Configura [MultiProvider] con los providers globales y
-/// [MaterialApp] con rutas nombradas.
 class BpmClientApp extends StatefulWidget {
   const BpmClientApp({super.key});
 
@@ -32,8 +29,9 @@ class _BpmClientAppState extends State<BpmClientApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PoliticaCatalogProvider()),
+        ChangeNotifierProvider(create: (_) => SeguimientoProvider()),
         ChangeNotifierProvider(
-          create: (_) => SeguimientoProvider(_localNotifService),
+          create: (_) => TramiteTrackerProvider(_localNotifService),
         ),
       ],
       child: MaterialApp(
@@ -46,7 +44,7 @@ class _BpmClientAppState extends State<BpmClientApp> {
         ),
         initialRoute: '/',
         routes: {
-          '/': (_) => PoliticasScreen(localNotifService: _localNotifService),
+          '/': (_) => const PoliticasScreen(),
           '/seguimiento': (_) => const SeguimientoScreen(),
         },
       ),

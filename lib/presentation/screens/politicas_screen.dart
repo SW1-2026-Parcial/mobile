@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/services/local_notification_service.dart';
 import '../providers/politica_catalog_provider.dart';
+import '../widgets/app_shell.dart';
 import '../widgets/politica_card.dart';
 
 /// Pantalla que muestra el catálogo de políticas de negocio publicadas.
@@ -11,10 +11,7 @@ import '../widgets/politica_card.dart';
 ///
 /// Ruta nombrada: `/`
 class PoliticasScreen extends StatefulWidget {
-  // ── TEST ONLY START ──
-  final LocalNotificationService localNotifService;
-  const PoliticasScreen({super.key, required this.localNotifService});
-  // ── TEST ONLY END ──
+  const PoliticasScreen({super.key});
 
   @override
   State<PoliticasScreen> createState() => _PoliticasScreenState();
@@ -79,26 +76,11 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Catálogo de Trámites'),
-        backgroundColor: const Color(0xFF3F51B5),
-        foregroundColor: Colors.white,
-      ),
+    return AppShell(
+      title: 'Catálogo de Trámites',
       body: Consumer<PoliticaCatalogProvider>(
         builder: (context, provider, _) => _buildBody(provider),
       ),
-      // ── TEST ONLY START ──
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => widget.localNotifService.showTramiteUpdate(
-          titulo: '🔔 Prueba',
-          cuerpo: 'Notificación local funcionando correctamente',
-        ),
-        icon: const Icon(Icons.notifications_active),
-        label: const Text('Test Push'),
-        backgroundColor: Colors.orange,
-      ),
-      // ── TEST ONLY END ──
     );
   }
 }
