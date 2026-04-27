@@ -47,7 +47,7 @@ class PoliticaCard extends StatelessWidget {
                   fontSize: 13,
                   color: Colors.grey.shade700,
                 ),
-                maxLines: 3,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],

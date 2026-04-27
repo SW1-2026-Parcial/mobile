@@ -28,6 +28,7 @@ class _BpmClientAppState extends State<BpmClientApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<LocalNotificationService>.value(value: _localNotifService),
         ChangeNotifierProvider(create: (_) => PoliticaCatalogProvider()),
         ChangeNotifierProvider(create: (_) => SeguimientoProvider()),
         ChangeNotifierProvider(

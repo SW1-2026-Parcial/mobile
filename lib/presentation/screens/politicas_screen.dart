@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/local_notification_service.dart';
 import '../providers/politica_catalog_provider.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/politica_card.dart';
@@ -78,6 +79,25 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
   Widget build(BuildContext context) {
     return AppShell(
       title: 'Catálogo de Trámites',
+      // ── TEST ONLY START ──
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_active),
+          tooltip: 'Test push',
+          onPressed: () => context.read<LocalNotificationService>().showTramiteUpdate(
+                titulo: '🔔 Prueba',
+                cuerpo: 'Notificación local funcionando correctamente',
+              ),
+        ),
+      ],
+      // ── TEST ONLY END ──
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, '/seguimiento'),
+        backgroundColor: const Color(0xFF3F51B5),
+        foregroundColor: Colors.white,
+        tooltip: 'Buscar trámite',
+        child: const Icon(Icons.search),
+      ),
       body: Consumer<PoliticaCatalogProvider>(
         builder: (context, provider, _) => _buildBody(provider),
       ),

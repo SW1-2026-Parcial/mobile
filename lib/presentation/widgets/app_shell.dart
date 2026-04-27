@@ -7,12 +7,14 @@ class AppShell extends StatelessWidget {
   final String title;
   final Widget body;
   final List<Widget>? actions;
+  final Widget? floatingActionButton;
 
   const AppShell({
     super.key,
     required this.title,
     required this.body,
     this.actions,
+    this.floatingActionButton,
   });
 
   @override
@@ -26,6 +28,7 @@ class AppShell extends StatelessWidget {
       ),
       drawer: _TramiteDrawer(),
       body: body,
+      floatingActionButton: floatingActionButton,
     );
   }
 }
