@@ -74,15 +74,30 @@ class _TramiteDrawer extends StatelessWidget {
               ),
               const Divider(),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  'Trámites seguidos (${tracker.tramites.length}/${TramiteTrackerProvider.maxTramites})',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey,
-                    letterSpacing: 0.5,
-                  ),
+                padding: const EdgeInsets.only(left: 16, right: 4, top: 8, bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Trámites seguidos (${tracker.tramites.length}/${TramiteTrackerProvider.maxTramites})',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.manage_search,
+                          color: Color(0xFF3F51B5)),
+                      tooltip: 'Consultar trámite',
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/seguimiento');
+                      },
+                    ),
+                  ],
                 ),
               ),
               if (tracker.tramites.isEmpty)

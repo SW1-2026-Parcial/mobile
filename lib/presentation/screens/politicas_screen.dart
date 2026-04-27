@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/local_notification_service.dart';
+import '../../domain/models/politica_model.dart';
 import '../providers/politica_catalog_provider.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/politica_card.dart';
+import 'politica_detail_screen.dart';
 
-/// Pantalla que muestra el catálogo de políticas de negocio publicadas.
-///
-/// Llama a `GET /api/policies/public` al inicializarse.
-/// Muestra lista scrollable de [PoliticaCard].
-///
-/// Ruta nombrada: `/`
 class PoliticasScreen extends StatefulWidget {
   const PoliticasScreen({super.key});
 
@@ -19,12 +15,43 @@ class PoliticasScreen extends StatefulWidget {
 }
 
 class _PoliticasScreenState extends State<PoliticasScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+  bool _searchVisible = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PoliticaCatalogProvider>().cargarPoliticas();
     });
+    _searchController.addListener(() {
+      setState(() => _query = _searchController.text.toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<PoliticaModel> _filtrar(List<PoliticaModel> todas) {
+    if (_query.isEmpty) return todas;
+    return todas
+        .where((p) =>
+            p.nombre.toLowerCase().contains(_query) ||
+            p.descripcion.toLowerCase().contains(_query))
+        .toList();
+  }
+
+  void _abrirDetalle(PoliticaModel politica) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PoliticaDetailScreen(politica: politica),
+      ),
+    );
   }
 
   Widget _buildBody(PoliticaCatalogProvider provider) {
@@ -55,11 +82,16 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
       );
     }
 
-    if (provider.politicas.isEmpty) {
-      return const Center(
+    final lista = _filtrar(provider.politicas);
+
+    if (lista.isEmpty) {
+      return Center(
         child: Text(
-          'No hay políticas disponibles por el momento.',
-          style: TextStyle(color: Colors.grey),
+          _query.isEmpty
+              ? 'No hay políticas disponibles por el momento.'
+              : 'Sin resultados para "$_query".',
+          style: const TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
         ),
       );
     }
@@ -67,10 +99,11 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
     return RefreshIndicator(
       onRefresh: provider.cargarPoliticas,
       child: ListView.builder(
-        itemCount: provider.politicas.length,
-        itemBuilder: (context, index) {
-          return PoliticaCard(politica: provider.politicas[index]);
-        },
+        itemCount: lista.length,
+        itemBuilder: (context, index) => PoliticaCard(
+          politica: lista[index],
+          onTap: () => _abrirDetalle(lista[index]),
+        ),
       ),
     );
   }
@@ -79,27 +112,59 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
   Widget build(BuildContext context) {
     return AppShell(
       title: 'Catálogo de Trámites',
-      // ── TEST ONLY START ──
       actions: [
+        IconButton(
+          icon: Icon(_searchVisible ? Icons.search_off : Icons.search),
+          tooltip: _searchVisible ? 'Cerrar búsqueda' : 'Buscar política',
+          onPressed: () {
+            setState(() {
+              _searchVisible = !_searchVisible;
+              if (!_searchVisible) {
+                _searchController.clear();
+              }
+            });
+          },
+        ),
+        // ── TEST ONLY START ──
         IconButton(
           icon: const Icon(Icons.notifications_active),
           tooltip: 'Test push',
-          onPressed: () => context.read<LocalNotificationService>().showTramiteUpdate(
-                titulo: '🔔 Prueba',
-                cuerpo: 'Notificación local funcionando correctamente',
-              ),
+          onPressed: () =>
+              context.read<LocalNotificationService>().showTramiteUpdate(
+                    titulo: '🔔 Prueba',
+                    cuerpo: 'Notificación local funcionando correctamente',
+                  ),
         ),
+        // ── TEST ONLY END ──
       ],
-      // ── TEST ONLY END ──
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/seguimiento'),
-        backgroundColor: const Color(0xFF3F51B5),
-        foregroundColor: Colors.white,
-        tooltip: 'Buscar trámite',
-        child: const Icon(Icons.search),
-      ),
-      body: Consumer<PoliticaCatalogProvider>(
-        builder: (context, provider, _) => _buildBody(provider),
+      body: Column(
+        children: [
+          if (_searchVisible)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Buscar política...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: _searchController.clear,
+                        )
+                      : null,
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ),
+          Expanded(
+            child: Consumer<PoliticaCatalogProvider>(
+              builder: (context, provider, _) => _buildBody(provider),
+            ),
+          ),
+        ],
       ),
     );
   }
