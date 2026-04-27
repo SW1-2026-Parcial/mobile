@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/local_notification_service.dart';
 import '../providers/politica_catalog_provider.dart';
 import '../widgets/politica_card.dart';
 
@@ -10,7 +11,10 @@ import '../widgets/politica_card.dart';
 ///
 /// Ruta nombrada: `/`
 class PoliticasScreen extends StatefulWidget {
-  const PoliticasScreen({super.key});
+  // ── TEST ONLY START ──
+  final LocalNotificationService localNotifService;
+  const PoliticasScreen({super.key, required this.localNotifService});
+  // ── TEST ONLY END ──
 
   @override
   State<PoliticasScreen> createState() => _PoliticasScreenState();
@@ -20,13 +24,11 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar políticas al abrir la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PoliticaCatalogProvider>().cargarPoliticas();
     });
   }
 
-  /// Construye el cuerpo de la pantalla según el estado del provider.
   Widget _buildBody(PoliticaCatalogProvider provider) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -86,6 +88,17 @@ class _PoliticasScreenState extends State<PoliticasScreen> {
       body: Consumer<PoliticaCatalogProvider>(
         builder: (context, provider, _) => _buildBody(provider),
       ),
+      // ── TEST ONLY START ──
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => widget.localNotifService.showTramiteUpdate(
+          titulo: '🔔 Prueba',
+          cuerpo: 'Notificación local funcionando correctamente',
+        ),
+        icon: const Icon(Icons.notifications_active),
+        label: const Text('Test Push'),
+        backgroundColor: Colors.orange,
+      ),
+      // ── TEST ONLY END ──
     );
   }
 }

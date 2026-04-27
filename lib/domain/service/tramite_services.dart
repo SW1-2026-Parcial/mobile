@@ -8,7 +8,7 @@ class TramiteService {
     }
     
     bool isCompleted = historial.any((e) => e.nodeId == nodeId && e.eventType == "TASK_COMPLETED");
-    return isCompleted ? "VERDE" : "ROJO";
+    return isCompleted ? "COMPLETADO" : "ROJO";
   }
 
   void ordenarEventosPorFecha(List<TramiteEvent> eventos) {

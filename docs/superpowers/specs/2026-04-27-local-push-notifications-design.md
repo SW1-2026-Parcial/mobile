@@ -99,7 +99,7 @@ Timer? _pollingTimer;
 List<String> _lastNodeIds = [];
 TramiteStatus? _lastStatus;
 String? _ticketActivo;
-static const int _pollingIntervalSec = 30;
+static const int _pollingIntervalSec = 10;
 ```
 
 ### Lógica de polling — flujo completo
