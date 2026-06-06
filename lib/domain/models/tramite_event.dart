@@ -1,6 +1,6 @@
 class TramiteEvent {
   final String tramiteId;
-  final String eventType; // NODE_ENTERED, TASK_COMPLETED, etc. [cite: 145]
+  final String eventType;
   final String? nodeId;
   final String? comentario;
   final String timestamp;
@@ -15,11 +15,11 @@ class TramiteEvent {
 
   factory TramiteEvent.fromJson(Map<String, dynamic> json) {
     return TramiteEvent(
-      tramiteId: json['tramiteId'],
-      eventType: json['eventType'],
+      tramiteId: json['tramiteId'] ?? '',
+      eventType: json['eventType'] ?? json['tipo'] ?? json['type'] ?? '',
       nodeId: json['nodeId'],
       comentario: json['comentario'],
-      timestamp: json['timestamp'],
+      timestamp: json['timestamp'] ?? DateTime.now().toIso8601String(),
     );
   }
 }

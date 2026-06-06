@@ -1,4 +1,4 @@
-enum TramiteStatus { ACTIVE, COMPLETED, REJECTED, PAUSED }
+enum TramiteStatus { ACTIVE, COMPLETED, REJECTED, CANCELLED }
 
 class TramiteModel {
   final String id;

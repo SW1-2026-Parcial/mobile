@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../data/repositories/documento_repository.dart';
+import '../../domain/models/documento_model.dart';
+import '../../domain/models/tramite_model.dart';
 import '../providers/seguimiento_provider.dart';
 import '../providers/tramite_tracker_provider.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/tramite_status_badge.dart';
 import '../widgets/tramite_timeline.dart';
+import 'documentos/documentos_screen.dart';
 
 class SeguimientoScreen extends StatefulWidget {
   const SeguimientoScreen({super.key});
@@ -15,7 +19,12 @@ class SeguimientoScreen extends StatefulWidget {
 
 class _SeguimientoScreenState extends State<SeguimientoScreen> {
   final TextEditingController _ticketController = TextEditingController();
+  final DocumentoRepository _docRepo = DocumentoRepository();
   bool _initFromArgs = false;
+
+  List<DocumentoModel> _documentos = [];
+  bool _docsLoading = false;
+  bool _docsExpanded = false;
 
   @override
   void didChangeDependencies() {
@@ -41,9 +50,26 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
   void _buscar(String ticket) {
     final trimmed = ticket.trim();
     if (trimmed.isEmpty) return;
+    setState(() {
+      _documentos = [];
+      _docsExpanded = false;
+    });
     context.read<SeguimientoProvider>().buscarTramite(trimmed).then((_) {
       _intentarAgregarAlTracker(trimmed);
+      _cargarDocumentos();
     });
+  }
+
+  Future<void> _cargarDocumentos() async {
+    final tramite = context.read<SeguimientoProvider>().tramite;
+    if (tramite == null) return;
+    setState(() => _docsLoading = true);
+    try {
+      _documentos = await _docRepo.getByTramiteId(tramite.id);
+    } catch (_) {
+      _documentos = [];
+    }
+    if (mounted) setState(() => _docsLoading = false);
   }
 
   void _intentarAgregarAlTracker(String ticketNumber) {
@@ -210,11 +236,165 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 16),
+              _buildDocumentosSection(tramite),
               const SizedBox(height: 32),
             ],
           ),
         );
     }
+  }
+
+  IconData _iconForExtension(String ext) {
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'docx':
+      case 'doc':
+        return Icons.description;
+      case 'xlsx':
+      case 'xls':
+        return Icons.table_chart;
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+        return Icons.image;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  Widget _buildDocumentosSection(TramiteModel tramite) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() => _docsExpanded = !_docsExpanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.folder_outlined, color: Color(0xFF3F51B5)),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Documentos',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (_docsLoading)
+                    const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${_documentos.length}',
+                        style: const TextStyle(
+                          color: Color(0xFF3F51B5),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _docsExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.grey,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_docsExpanded) ...[
+            const Divider(height: 1),
+            if (_documentos.isEmpty && !_docsLoading)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No hay documentos asociados a este trámite',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                itemCount: _documentos.length,
+                separatorBuilder: (context2, i) => const Divider(height: 1, indent: 56),
+                itemBuilder: (_, index) {
+                  final doc = _documentos[index];
+                  return ListTile(
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.grey.shade100,
+                      child: Icon(
+                        _iconForExtension(doc.extension),
+                        size: 20,
+                        color: const Color(0xFF3F51B5),
+                      ),
+                    ),
+                    title: Text(
+                      doc.nombre,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      '${doc.sizeFormatted} · ${doc.extension.toUpperCase()}',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                    trailing: Text(
+                      doc.extension.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DocumentosScreen(
+                          tramiteId: tramite.id,
+                          ticketNumber: tramite.ticketNumber,
+                        ),
+                      ),
+                    ).then((_) => _cargarDocumentos());
+                  },
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('Ver todos / Subir documento'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF3F51B5),
+                    side: const BorderSide(color: Color(0xFF3F51B5), width: 1),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override

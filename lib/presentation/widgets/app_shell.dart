@@ -8,6 +8,7 @@ class AppShell extends StatelessWidget {
   final Widget body;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
+  final bool showAgentFab;
 
   const AppShell({
     super.key,
@@ -15,6 +16,7 @@ class AppShell extends StatelessWidget {
     required this.body,
     this.actions,
     this.floatingActionButton,
+    this.showAgentFab = true,
   });
 
   @override
@@ -28,7 +30,15 @@ class AppShell extends StatelessWidget {
       ),
       drawer: _TramiteDrawer(),
       body: body,
-      floatingActionButton: floatingActionButton,
+      floatingActionButton: floatingActionButton ??
+          (showAgentFab
+              ? FloatingActionButton(
+                  heroTag: 'agent_fab',
+                  backgroundColor: const Color(0xFF3F51B5),
+                  onPressed: () => Navigator.pushNamed(context, '/agente'),
+                  child: const Icon(Icons.smart_toy, color: Colors.white),
+                )
+              : null),
     );
   }
 }
@@ -167,8 +177,8 @@ class _TramiteDrawerItem extends StatelessWidget {
         return Icons.check_circle;
       case TramiteStatus.REJECTED:
         return Icons.cancel;
-      case TramiteStatus.PAUSED:
-        return Icons.pause_circle;
+      case TramiteStatus.CANCELLED:
+        return Icons.cancel_outlined;
     }
   }
 
@@ -180,7 +190,7 @@ class _TramiteDrawerItem extends StatelessWidget {
         return Colors.green;
       case TramiteStatus.REJECTED:
         return Colors.red;
-      case TramiteStatus.PAUSED:
+      case TramiteStatus.CANCELLED:
         return Colors.grey;
     }
   }

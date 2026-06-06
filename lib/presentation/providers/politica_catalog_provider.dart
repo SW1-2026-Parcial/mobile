@@ -20,7 +20,10 @@ class PoliticaCatalogProvider extends ChangeNotifier {
     try {
       politicas = await _repository.obtenerCatalogoPublico();
     } catch (e) {
-      errorMessage = 'No se pudo cargar el catálogo de políticas. Intenta de nuevo.';
+      final msg = e.toString();
+      errorMessage = msg.contains('caché')
+          ? 'Sin conexión y sin datos guardados. Conéctate para ver el catálogo.'
+          : 'No se pudo cargar el catálogo. Intenta de nuevo.';
       debugPrint('[PoliticaCatalogProvider] Error: $e');
     } finally {
       isLoading = false;

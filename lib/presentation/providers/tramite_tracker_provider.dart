@@ -97,19 +97,19 @@ class TramiteTrackerProvider extends ChangeNotifier {
 
     // Cancelar timer si ya no quedan trámites activos
     final hayActivos = _lastStatus.values.any(
-      (s) => s == TramiteStatus.ACTIVE || s == TramiteStatus.PAUSED,
+      (s) => s == TramiteStatus.ACTIVE,
     );
     if (!hayActivos) _stopTimer();
 
     if (huboCambio) notifyListeners();
   }
 
+  /// Compara dos listas de nodeIds ignorando el orden.
+  /// El backend puede devolver los nodos activos en orden distinto entre llamadas
+  /// (especialmente en flujos con FORK/paralelismo), así que usamos Set para comparar.
   bool _listasIguales(List<String> a, List<String> b) {
     if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
+    return Set<String>.from(a).containsAll(b);
   }
 
   String _titulo(TramiteStatus status, bool statusCambio) {

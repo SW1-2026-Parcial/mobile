@@ -6,7 +6,7 @@ import '../../domain/models/tramite_model.dart';
 /// - ACTIVE    → amarillo (en proceso)
 /// - COMPLETED → verde    (finalizado con éxito)
 /// - REJECTED  → rojo     (rechazado)
-/// - PAUSED    → gris     (pausado)
+/// - CANCELLED → gris     (cancelado)
 class TramiteStatusBadge extends StatelessWidget {
   /// Estado del trámite a mostrar.
   final TramiteStatus status;
@@ -22,8 +22,8 @@ class TramiteStatusBadge extends StatelessWidget {
         return const Color(0xFF4CAF50); // verde — completado
       case TramiteStatus.REJECTED:
         return const Color(0xFFF44336); // rojo — rechazado
-      case TramiteStatus.PAUSED:
-        return const Color(0xFF9E9E9E); // gris — pausado
+      case TramiteStatus.CANCELLED:
+        return const Color(0xFF9E9E9E); // gris — cancelado
     }
   }
 
@@ -36,8 +36,8 @@ class TramiteStatusBadge extends StatelessWidget {
         return 'Completado';
       case TramiteStatus.REJECTED:
         return 'Rechazado';
-      case TramiteStatus.PAUSED:
-        return 'Pausado';
+      case TramiteStatus.CANCELLED:
+        return 'Cancelado';
     }
   }
 
