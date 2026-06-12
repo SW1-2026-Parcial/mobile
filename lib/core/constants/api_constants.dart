@@ -6,8 +6,8 @@ class ApiConstants {
   //   Dispositivo físico  → IP local (ej: 192.168.1.x)
   //   Producción          → URL de Azure (descomentar línea prod)
 
-  static const String baseUrl = "http://localhost:8080/api";
-  static const String wsUrl   = "ws://localhost:8080/ws";
+  static const String baseUrl = "http://192.168.0.59:8080/api";
+  static const String wsUrl   = "ws://192.168.0.59:8080/ws";
 
   // static const String baseUrl = "http://10.0.2.2:8080/api";           // Android Emulator
   // static const String wsUrl   = "ws://10.0.2.2:8080/ws/websocket";

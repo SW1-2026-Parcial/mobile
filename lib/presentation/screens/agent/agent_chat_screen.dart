@@ -4,6 +4,8 @@ import '../../providers/agent_provider.dart';
 import '../../widgets/agent/chat_bubble.dart';
 import '../../widgets/agent/datos_recopilados_card.dart';
 import '../../widgets/agent/typing_indicator.dart';
+import '../../widgets/agent/voice_record_button.dart';
+import '../documentos/documentos_screen.dart';
 
 /// Pantalla principal del agente conversacional.
 class AgentChatScreen extends StatefulWidget {
@@ -22,6 +24,47 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _iniciarTramite() async {
+    final provider = context.read<AgentProvider>();
+    try {
+      final tramite = await provider.iniciarTramite();
+
+      // Agregar al tracker para seguimiento
+      if (mounted) {
+        // Necesitamos el TramiteModel — lo cargamos desde seguimiento
+        // Por ahora navegamos directo a documentos con el tramiteId
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Trámite creado: ${tramite.ticketNumber}'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al iniciar trámite: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _navegarADocumentos(String tramiteId, String ticketNumber) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DocumentosScreen(
+          tramiteId: tramiteId,
+          ticketNumber: ticketNumber,
+        ),
+      ),
+    );
   }
 
   void _enviarMensaje() {
@@ -66,10 +109,18 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
               final campos = provider.camposRecopilados;
               final faltantes = provider.camposFaltantes;
               if (campos == null || campos.isEmpty) return const SizedBox.shrink();
+              final tramite = provider.tramiteCreado;
               return DatosRecopiladosCard(
                 campos: campos,
                 faltantes: faltantes ?? [],
                 listoParaIniciar: provider.listoParaIniciar,
+                tramiteYaCreado: tramite != null,
+                ticketCreado: tramite?.ticketNumber,
+                onIniciar: provider.isLoading ? null : _iniciarTramite,
+                onVerDocumentos: tramite != null
+                    ? () => _navegarADocumentos(
+                        tramite.tramiteId, tramite.ticketNumber)
+                    : null,
               );
             },
           ),
@@ -153,6 +204,13 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                       onSubmitted: (_) => _enviarMensaje(),
                       maxLines: null,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  VoiceRecordButton(
+                    onResult: (texto) {
+                      _controller.text = texto;
+                      _enviarMensaje();
+                    },
                   ),
                   const SizedBox(width: 8),
                   CircleAvatar(

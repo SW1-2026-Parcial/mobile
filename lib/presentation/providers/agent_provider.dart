@@ -6,6 +6,12 @@ import '../../core/database/sync/connectivity_service.dart';
 import '../../data/repositories/agent_repository.dart';
 import '../../domain/models/mensaje_agente.dart';
 
+class TramiteCreado {
+  final String tramiteId;
+  final String ticketNumber;
+  TramiteCreado({required this.tramiteId, required this.ticketNumber});
+}
+
 /// Provider que gestiona el estado de la conversación con el agente.
 class AgentProvider extends ChangeNotifier {
   final AgentRepository _repository = AgentRepository();
@@ -14,10 +20,12 @@ class AgentProvider extends ChangeNotifier {
   List<MensajeAgente> _mensajes = [];
   bool _isLoading = false;
   String? _error;
+  TramiteCreado? _tramiteCreado;
 
   List<MensajeAgente> get mensajes => _mensajes;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  TramiteCreado? get tramiteCreado => _tramiteCreado;
 
   /// Campos recopilados hasta ahora en la conversación.
   Map<String, dynamic>? get camposRecopilados {
@@ -110,11 +118,53 @@ class AgentProvider extends ChangeNotifier {
     }
   }
 
+  /// Llama al backend para crear el trámite con los datos recopilados.
+  Future<TramiteCreado> iniciarTramite() async {
+    final politicaId = _ultimaPoliticaId();
+    final campos = camposRecopilados ?? {};
+
+    if (politicaId == null) {
+      throw Exception('No hay política identificada');
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _repository.iniciarTramite(
+        politicaId: politicaId,
+        camposRecopilados: campos,
+      );
+
+      _tramiteCreado = TramiteCreado(
+        tramiteId: result['tramiteId']!,
+        ticketNumber: result['ticketNumber']!,
+      );
+      _guardarConversacionLocal();
+      notifyListeners();
+      return _tramiteCreado!;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  String? _ultimaPoliticaId() {
+    for (int i = _mensajes.length - 1; i >= 0; i--) {
+      if (!_mensajes[i].esUsuario &&
+          _mensajes[i].politicaIdentificada != null) {
+        return _mensajes[i].politicaIdentificada;
+      }
+    }
+    return null;
+  }
+
   /// Inicia una nueva conversación limpia.
   Future<void> nuevaConversacion() async {
     await _repository.limpiarSesion();
     _mensajes = [];
     _error = null;
+    _tramiteCreado = null;
     await LocalDatabase.conversaciones.delete('current');
     notifyListeners();
   }

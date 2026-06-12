@@ -65,6 +65,37 @@ class AgentRepository {
     }
   }
 
+  /// Inicia el trámite con los datos recopilados. Retorna tramiteId y ticketNumber.
+  Future<Map<String, String>> iniciarTramite({
+    required String politicaId,
+    required Map<String, dynamic> camposRecopilados,
+    String? fcmToken,
+  }) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}/agent/iniciar-tramite');
+
+    final body = <String, dynamic>{
+      'politicaId': politicaId,
+      'camposRecopilados': camposRecopilados,
+      if (fcmToken != null) 'fcmToken': fcmToken,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return {
+        'tramiteId': data['tramiteId'] as String,
+        'ticketNumber': data['ticketNumber'] as String,
+      };
+    } else {
+      throw Exception('Error al iniciar trámite: ${response.statusCode}');
+    }
+  }
+
   /// Limpia la sesión actual del agente.
   Future<void> limpiarSesion() async {
     if (_sessionId == null) return;

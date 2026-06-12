@@ -25,7 +25,7 @@ class DocumentoRepository {
     required File file,
     required String nombre,
   }) async {
-    final uri = Uri.parse('${ApiConstants.baseUrl}/documentos/upload');
+    final uri = Uri.parse('${ApiConstants.baseUrl}/documentos/public/upload');
     final request = http.MultipartRequest('POST', uri);
 
     request.fields['tramiteId'] = tramiteId;

@@ -8,6 +8,8 @@ class MensajeAgente {
   final Map<String, dynamic>? camposRecopilados;
   final List<String>? camposFaltantes;
   final bool listoParaIniciar;
+  final String? tramiteId;
+  final String? ticketNumber;
 
   MensajeAgente({
     required this.id,
@@ -18,6 +20,8 @@ class MensajeAgente {
     this.camposRecopilados,
     this.camposFaltantes,
     this.listoParaIniciar = false,
+    this.tramiteId,
+    this.ticketNumber,
   });
 
   factory MensajeAgente.fromJson(Map<String, dynamic> json) => MensajeAgente(
@@ -33,6 +37,8 @@ class MensajeAgente {
             ? List<String>.from(json['camposFaltantes'])
             : null,
         listoParaIniciar: json['listoParaIniciar'] ?? false,
+        tramiteId: json['tramiteId'],
+        ticketNumber: json['ticketNumber'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -44,5 +50,7 @@ class MensajeAgente {
         'camposRecopilados': camposRecopilados,
         'camposFaltantes': camposFaltantes,
         'listoParaIniciar': listoParaIniciar,
+        'tramiteId': tramiteId,
+        'ticketNumber': ticketNumber,
       };
 }

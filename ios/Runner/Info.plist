@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>El asistente BPM necesita reconocimiento de voz para que puedas dictar tu solicitud.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>El asistente BPM necesita el micrófono para recibir comandos de voz.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
